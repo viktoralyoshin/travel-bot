@@ -1,4 +1,5 @@
 name: Versioning on Merge
+
 on:
   pull_request:
     branches: [main]
@@ -10,29 +11,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Получаем всю историю коммитов для работы с тегами
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install bumpversion
+        run: pip install bump2version
+
       - name: Get current version
         id: version
         run: |
-          # Если версия хранится в файле (например, version.txt)
-          if [ -f "version.txt" ]; then
-            CURRENT_VERSION=$(cat version.txt)
+          if git describe --tags --abbrev=0 2>/dev/null; then
+            CURRENT_VERSION=$(git describe --tags --abbrev=0)
+            echo "current_version=${CURRENT_VERSION}" >> $GITHUB_OUTPUT
           else
-            CURRENT_VERSION="0.1.0"  # Дефолтная версия
+            echo "current_version=0.1.0" >> $GITHUB_OUTPUT
           fi
-          echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
 
       - name: Bump version (Patch)
-        id: bump
-        uses: phips28/gh-action-bump-version@v10
-        with:
-          tag-prefix: "v"
-          skip-tag: false
-          skip-commit: false
-          default-bump: "patch"  # Увеличивает третью цифру (0.1.0 → 0.1.1)
-          # Можно заменить на minor/major при необходимости
-
-      - name: Push new version tag
         run: |
+          CURRENT_VERSION=${{ steps.version.outputs.current_version }}
+          NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. '{$NF=$NF+1; print $1"."$2"."$NF}')
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
-          git push --tags
+          git tag -a "v${NEW_VERSION}" -m "Version ${NEW_VERSION}"
+          git push origin "v${NEW_VERSION}"
