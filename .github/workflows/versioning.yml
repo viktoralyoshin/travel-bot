@@ -5,37 +5,33 @@ on:
     branches: [main]
     types: [closed]
 
+permissions:
+  contents: write  # Ключевое изменение!
+
 jobs:
   bump-version:
     if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
     runs-on: ubuntu-latest
+    
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Получаем всю историю коммитов для работы с тегами
-
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-
-      - name: Install bumpversion
-        run: pip install bump2version
+          fetch-depth: 0  # Полная история коммитов для работы с тегами
 
       - name: Get current version
         id: version
         run: |
           if git describe --tags --abbrev=0 2>/dev/null; then
-            CURRENT_VERSION=$(git describe --tags --abbrev=0)
-            echo "current_version=${CURRENT_VERSION}" >> $GITHUB_OUTPUT
+            echo "current_version=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
           else
             echo "current_version=0.1.0" >> $GITHUB_OUTPUT
           fi
 
-      - name: Bump version (Patch)
+      - name: Bump version
         run: |
           CURRENT_VERSION=${{ steps.version.outputs.current_version }}
-          NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. '{$NF=$NF+1; print $1"."$2"."$NF}')
+          NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. '{$NF=$NF+1; OFS="."; print}')
+          
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git tag -a "v${NEW_VERSION}" -m "Version ${NEW_VERSION}"
