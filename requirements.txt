@@ -1,2 +1,5 @@
 python-telegram-bot==20.5
 python-dotenv==1.0.0
+asyncpg==0.28.0
+sqlalchemy[asyncpg]==2.0.25
+alembic==1.13.1
