@@ -1,19 +1,40 @@
-from typing import List
-from sqlalchemy import select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 
 from db.models import Attraction
-from db.repositories.base import BaseRepository
 
-class AttractionRepository(BaseRepository[Attraction]):
-    def __init__(self, session:AsyncSession):
+
+class AttractionRepository:
+    def __init__(self, session: AsyncSession):
         self.session = session
 
     async def get_all(self):
         result = await self.session.execute(select(Attraction))
         return result.scalars().all()
+    
+    async def get_by_id(self, id: int):
+        result = await self.session.execute(select(Attraction).where(Attraction.id == id))
+        return result.scalar_one_or_none()
 
-    async def get_top_rated(self, limit: int = 5) -> List[Attraction]:
-        result = await self.session.execute(select(Attraction).order_by(desc(Attraction.rating)).limit(limit))
+    async def create(
+        self,
+        name: str,
+        description: str,
+        image_url: str,
+        address: str,
+        rating: int,
+        yandex_url: str,
+    ):
+        attraction = Attraction(
+            name=name,
+            description=description,
+            image_url=image_url,
+            address=address,
+            rating=rating,
+            yandex_url=yandex_url,
+        )
 
-        return result.scalars().all()
+        self.session.add(attraction)
+        await self.session.commit()
+
+        return attraction

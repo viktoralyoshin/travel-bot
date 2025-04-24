@@ -1,6 +1,7 @@
 import os
 from telegram import InlineKeyboardButton, InputMediaPhoto, Update, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
+from db.db import get_db
 from db.repositories.attractions import AttractionRepository
 from keyboards.main import get_back_to_menu_button
 
@@ -11,15 +12,10 @@ async def attractions_callback(update: Update, context: ContextTypes.DEFAULT_TYP
     await query.answer()
 
     photo_path = os.path.join("assets", "images", "attractions.webp")
-    reply_markup = InlineKeyboardMarkup([get_back_to_menu_button()])
 
     try:
-        session_gen = context.bot_data["get_db"]()
-
-
-        async with session_gen() as session:
+        async with get_db() as session:
             repo = AttractionRepository(session)
-
             attractions = await repo.get_all()
 
             if not attractions:
@@ -28,7 +24,7 @@ async def attractions_callback(update: Update, context: ContextTypes.DEFAULT_TYP
                         media=open(photo_path, "rb"),
                         caption="😔 Пока нет доступных достопримечательностей",
                     ),
-                    reply_markup=reply_markup,
+                    reply_markup=InlineKeyboardMarkup([get_back_to_menu_button()]),
                 )
                 return
 
@@ -41,7 +37,7 @@ async def attractions_callback(update: Update, context: ContextTypes.DEFAULT_TYP
                 for attr in attractions
             ]
 
-            keyboard = attractions_buttons + [[get_back_to_menu_button]]
+            keyboard = attractions_buttons + [get_back_to_menu_button()]
 
             reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -59,5 +55,5 @@ async def attractions_callback(update: Update, context: ContextTypes.DEFAULT_TYP
                 media=open(photo_path, "rb"),
                 caption="⚠️ Произошла ошибка при загрузке данных",
             ),
-            reply_markup=reply_markup,
+            reply_markup=InlineKeyboardMarkup([get_back_to_menu_button()]),
         )

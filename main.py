@@ -1,48 +1,27 @@
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler
-from db.init_db import init_models
-from db.session import get_db
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters
 from handlers.callbacks.router import button_click
-from handlers.commands import start
+from handlers.commands import start, start_create_attraction
 from dotenv import load_dotenv
 import os
-import asyncio
+
+from handlers.message_handlers.attraction import handle_attraction_creation
 
 load_dotenv()
 
 TOKEN = os.getenv("TELEGRAM_TOKEN")
 
 
-async def main():
-
-    await init_models()
+def main():
 
     app = Application.builder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("add_attraction", start_create_attraction))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_attraction_creation))
 
     app.add_handler(CallbackQueryHandler(button_click))
 
-    app.bot_data["get_db"] = get_db
-
-    async with app:
-        await app.initialize()
-        await app.start()
-        await app.updater.start_polling()
-
-        print("Бот успешно запущен!")
-
-        while True:
-            await asyncio.sleep(3600)
-
-        await app.updater.stop()
-        await app.stop()
-        await app.shutdown()
-
+    app.run_polling()
 
 if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        print("Бот остановлен")
-    except Exception as e:
-        print(f"Ошибка: {e}")
+    main()

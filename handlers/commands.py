@@ -11,11 +11,8 @@ async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, is_
     photo_path = os.path.join("assets", "images", "main.jpg")
 
     welcome_text = (
-        f"Привет, {user.first_name}! 👋\n"
-        "Я — твой гид по Иркутску. Вот что я умею:\n\n"
-        "📍 /attractions — Достопримечательности\n"
-        "🍴 /restaurants — Кафе и рестораны\n"
-        "❓ /help — Помощь"
+        f"Привет, {user.first_name}! 👋\n\n"
+        "Я — твой гид по Иркутску."
     )
 
     if is_callback: 
@@ -34,3 +31,7 @@ async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, is_
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await show_main_menu(update, context)
+
+async def start_create_attraction(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data['creating_attraction'] = {'step': 1}
+    await update.message.reply_text("Введите название достопримечательности:")
