@@ -12,12 +12,16 @@ async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, is_
 
     welcome_text = (
         f"Привет, {user.first_name}! 👋\n\n"
-        "Я — твой гид по Иркутску."
+        "Я — TravelBot Irkutsk, твой помощник в путешествии по Иркутску!\n\n"
+        "✨ <b>Что я могу рассказать:</b>\n\n"
+        "- 🏛️ Достопримечательности — топ мест с фото и описанием\n"
+        "- 🍽️ Кафе и рестораны — уютные кафе и рестораны\n\n"
+        "Выбирай категорию ниже!"
     )
 
     if is_callback: 
         await update.callback_query.edit_message_media(
-            media=InputMediaPhoto(media=open(photo_path, 'rb'), caption=welcome_text),
+            media=InputMediaPhoto(media=open(photo_path, 'rb'), caption=welcome_text, parse_mode='HTML'),
             reply_markup=get_main_menu_keyboard()
         )
     
@@ -25,13 +29,10 @@ async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, is_
         await update.message.reply_photo(
             photo=open(photo_path, 'rb'),
             caption=welcome_text,
+            parse_mode='HTML',
             reply_markup=get_main_menu_keyboard()
         )
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await show_main_menu(update, context)
-
-async def start_create_attraction(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data['creating_attraction'] = {'step': 1}
-    await update.message.reply_text("Введите название достопримечательности:")

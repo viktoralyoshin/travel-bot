@@ -2,55 +2,56 @@ import os
 from telegram import Update, InputMediaPhoto, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import ContextTypes
 from db.db import get_db
-from db.repositories.attractions import AttractionRepository
+from db.repositories.restaurants import RestaurantRepository
 from keyboards.main import get_back_to_menu_button
 
 
-async def attraction_detail_callback(
+async def restaurant_detail_callback(
     update: Update, context: ContextTypes.DEFAULT_TYPE
 ):
     query = update.callback_query
     await query.answer()
 
-    photo_path = os.path.join("assets", "images", "attractions.webp")
+    photo_path = os.path.join("assets", "images", "restaurants.jpg")
 
     try:
-        attraction_id = int(query.data.split("_")[1])
+        restaurant_id = int(query.data.split("_")[1])
 
         async with get_db() as session:
-            repo = AttractionRepository(session)
-            attraction = await repo.get_by_id(attraction_id)
+            repo = RestaurantRepository(session)
+            restaurant = await repo.get_by_id(restaurant_id)
 
-            if not attraction:
+            if not restaurant:
                 await query.edit_message_media(
                     media=InputMediaPhoto(
                         media=open(photo_path, "rb"),
-                        caption="🚫 Достопримечательность не найдена",
+                        caption="🚫 Ресторан не найден",
                     ),
                     reply_markup=InlineKeyboardMarkup([get_back_to_menu_button()]),
                 )
                 return
 
             text = (
-                f"🏛 <b>{attraction.name}</b>\n\n"
-                f"📝 {attraction.description}\n\n"
-                f"📍 Адрес: {attraction.address}\n"
-                f"⭐ Рейтинг: {attraction.rating}\n"
+                f"🏛 <b>{restaurant.name}</b>\n\n"
+                f"📝 {restaurant.description}\n\n"
+                f"📍 Адрес: {restaurant.address}\n"
+                f"⭐ Рейтинг: {restaurant.rating}\n"
+                f"💵 Средний чек: {restaurant.average_price} ₽\n"
             )
 
             keyboard = []
 
-            if attraction.yandex_url:
-                text += f"\n🌐 <a href='{attraction.yandex_url}'>Яндекс.Карты</a>"
+            if restaurant.yandex_url:
+                text += f"\n🌐 <a href='{restaurant.yandex_url}'>Яндекс.Карты</a>"
                 keyboard = [
-                    [InlineKeyboardButton("📍 На карте", url=attraction.yandex_url)]
+                    [InlineKeyboardButton("📍 На карте", url=restaurant.yandex_url)]
                 ]
 
             keyboard += [get_back_to_menu_button()]
 
             await query.edit_message_media(
                 media=InputMediaPhoto(
-                    media=attraction.image_url, caption=text, parse_mode="HTML"
+                    media=restaurant.image_url, caption=text, parse_mode="HTML"
                 ),
                 reply_markup=InlineKeyboardMarkup(keyboard),
             )
